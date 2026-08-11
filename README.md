@@ -84,43 +84,54 @@ The API will be available at:
 * **Payload (JSON):**
   ```json
   {
-    "pregunta": "What is FastAPI?"
+    "question": "What is FastAPI?"
   }
   ```
 
 * **Response:**
   ```json
   {
-    "fuente": "cache_semantico",
-    "porcentaje_similitud": 0.95,
-    "pregunta_actual": "What is FastAPI?",
-    "pregunta_guardada": "What is FastAPI and what is it used for?",
-    "respuesta": "FastAPI is a modern web framework..."
+    "source": "semantic_cache",
+    "similarity_percentage": 0.95,
+    "current_question": "What is FastAPI?",
+    "saved_question": "What is FastAPI and what is it used for?",
+    "response": "FastAPI is a modern web framework..."
   }
   ```
 
 ### 2. List Question History
 
-* **URL:** `GET /preguntas`
+* **URL:** `GET /questions`
 * **Description:** Returns the complete list of all questions and answers stored in the database.
+* **Response:**
+  ```json
+  [
+    {
+      "id": 1,
+      "question": "What is FastAPI?",
+      "response": "FastAPI is a modern web framework...",
+      "created_at": "2026-08-09T18:44:39"
+    }
+  ]
+  ```
 
 ### 3. Manual Similarity Search
 
-* **URL:** `POST /buscar-similitud`
+* **URL:** `POST /similarity-search`
 * **Description:** Allows testing the semantic search engine by sending a query and retrieving the similarity percentage with the closest registered question.
 * **Payload (JSON):**
   ```json
   {
-    "pregunta": "Explain FastAPI to me"
+    "question": "Explain FastAPI to me"
   }
   ```
 
 * **Response:**
   ```json
   {
-    "porcentaje_similitud": 0.92,
-    "pregunta_actual": "Explain FastAPI to me",
-    "pregunta_guardada": "What is FastAPI?",
-    "respuesta_guardada": "FastAPI is a modern web framework..."
+    "similarity_percentage": 0.92,
+    "current_question": "Explain FastAPI to me",
+    "saved_question": "What is FastAPI?",
+    "saved_response": "FastAPI is a modern web framework..."
   }
   ```

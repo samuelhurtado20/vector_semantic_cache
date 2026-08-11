@@ -1,7 +1,7 @@
-# US-007: Similarity Search Endpoint (`POST /buscar-similitud`)
+# US-007: Similarity Search Endpoint (`POST /similarity-search`)
 
 ## 1. Story Understanding (What, Why, and What For)
-- **What:** Create a manual testing endpoint `POST /buscar-similitud` that calculates similarity between the input question and all saved queries in the SQLite database, returning the closest match regardless of whether it meets the threshold.
+- **What:** Create a manual testing endpoint `POST /similarity-search` that calculates similarity between the input question and all saved queries in the SQLite database, returning the closest match regardless of whether it meets the threshold.
 - **Why:** Allows developers and testers to observe similarity scores to evaluate cache tuning, troubleshoot false hits, and calibrate the threshold.
 - **What For:** Provides a debug tool to inspect how close user queries are to existing cache definitions.
 
@@ -26,18 +26,18 @@ No database schema changes are required for this story.
 
 - [ ] **Task 1: Define Similarity Search Schemas**
   - In [schemas.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/schemas.py), define `SimilaritySearchRequest`:
-    - `pregunta: str` (non-empty)
+    - `question: str` (non-empty)
   - Define `SimilaritySearchResponse`:
-    - `porcentaje_similitud: float`
-    - `pregunta_actual: str`
-    - `pregunta_guardada: Optional[str] = None`
-    - `respuesta_guardada: Optional[str] = None`
-- [ ] **Task 2: Implement `/buscar-similitud` Route Logic**
+    - `similarity_percentage: float`
+    - `current_question: str`
+    - `saved_question: Optional[str] = None`
+    - `saved_response: Optional[str] = None`
+- [ ] **Task 2: Implement `/similarity-search` Route Logic**
   - In [main.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/main.py):
-    - Define a `POST /buscar-similitud` route accepting `SimilaritySearchRequest` and injecting `db_session`.
-    - Generate embedding for the input `pregunta` using `services.gemini.get_embedding`.
-    - Perform a similarity sweep using `services.cache_engine.buscar_en_cache`, ignoring the similarity threshold criteria to return the best match.
-    - If the DB has no interactions, return a response with `porcentaje_similitud=0.0`, and empty string placeholders.
+    - Define a `POST /similarity-search` route accepting `SimilaritySearchRequest` and injecting `db_session`.
+    - Generate embedding for the input `question` using `services.gemini.get_embedding`.
+    - Perform a similarity sweep using `services.cache_engine.search_cache`, ignoring the similarity threshold criteria to return the best match.
+    - If the DB has no interactions, return a response with `similarity_percentage=0.0`, and empty string placeholders.
     - Return the best match's details in a `SimilaritySearchResponse` object.
 
 ---
@@ -46,9 +46,9 @@ No database schema changes are required for this story.
 
 | Use Case | Acceptance Criteria | Tiers Touched | Verification Method |
 |---|---|---|---|
-| **UC-7.1: Validate Search Input** | AC-1: Expects a payload `{"pregunta": "..."}`. | BE | Send a request with a blank query. Verify validation fails with `422 Unprocessable Entity`. |
+| **UC-7.1: Validate Search Input** | AC-1: Expects a payload `{"question": "..."}`. | BE | Send a request with a blank query. Verify validation fails with `422 Unprocessable Entity`. |
 | **UC-7.2: Return Closest Match** | AC-2: Computes similarity against all saved records and returns the closest match even if below threshold. | DB, BE | Seed "How does python work?". Send request for "How to bake a cake?" (expected low similarity, e.g. ~0.35). Confirm it returns the python question as the closest match with the similarity score. |
-| **UC-7.3: Check Output Keys** | AC-3: Returns fields: `porcentaje_similitud`, `pregunta_actual`, `pregunta_guardada`, `respuesta_guardada`. | BE | Inspect JSON output from `POST /buscar-similitud` to ensure all fields are correctly populated. |
+| **UC-7.3: Check Output Keys** | AC-3: Returns fields: `similarity_percentage`, `current_question`, `saved_question`, `saved_response`. | BE | Inspect JSON output from `POST /similarity-search` to ensure all fields are correctly populated. |
 
 ---
 

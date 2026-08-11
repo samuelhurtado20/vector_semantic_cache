@@ -26,13 +26,13 @@ No database schema changes are required for this story. The database is queried 
 
 - [ ] **Task 1: Implement Cosine Similarity Calculation**
   - Create [services/cache_engine.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/services/cache_engine.py).
-  - Define `calcular_similitud_coseno(vecA: list[float], vecB: list[float]) -> float` using NumPy:
+  - Define `calculate_cosine_similarity(vecA: list[float], vecB: list[float]) -> float` using NumPy:
     $$\text{similarity} = \frac{\vec{A} \cdot \vec{B}}{\|\vec{A}\| \|\vec{B}\|}$$
 - [ ] **Task 2: Implement Cache Search Logic**
-  - Implement `buscar_en_cache(pregunta_embedding: list[float], db_session) -> tuple[bool, dict | None, float]`:
-    - Query all interactions from `cache_interacciones`.
+  - Implement `search_cache(question_embedding: list[float], db_session) -> tuple[bool, dict | None, float]`:
+    - Query all interactions from `interaction_cache`.
     - Deserialize each embedding JSON string to a list of floats.
-    - Calculate similarity with `pregunta_embedding`.
+    - Calculate similarity with `question_embedding`.
     - Find the item with the maximum similarity.
     - If maximum similarity $\ge$ `settings.similarity_threshold`, return `(True, matching_record, similarity_score)`.
     - Otherwise, return `(False, None, similarity_score)`.
@@ -44,8 +44,8 @@ No database schema changes are required for this story. The database is queried 
 | Use Case | Acceptance Criteria | Tiers Touched | Verification Method |
 |---|---|---|---|
 | **UC-4.1: Compute Cosine Similarity** | AC-1: Implement cosine similarity calculation. | BE | Run unit tests comparing predefined vectors. Verify identical vectors return `1.0` (or near `1.0`), and orthogonal vectors return `0.0`. |
-| **UC-4.2: Retrieve Cache Hit** | AC-2: Search database for highest cosine similarity. AC-3: If similarity $\ge$ threshold, return the cached record. | DB, BE | Save an interaction for "How is FastAPI used?" with its embedding. Run `buscar_en_cache` with a similar query like "What is the usage of FastAPI?" and verify it returns a hit. |
-| **UC-4.3: Return Cache Miss** | AC-3: If highest similarity < threshold, return `None`. | DB, BE | Run `buscar_en_cache` with a completely unrelated query like "How to cook pasta?". Verify it returns `False` (cache miss) and a low similarity score. |
+| **UC-4.2: Retrieve Cache Hit** | AC-2: Search database for highest cosine similarity. AC-3: If similarity $\ge$ threshold, return the cached record. | DB, BE | Save an interaction for "How is FastAPI used?" with its embedding. Run `search_cache` with a similar query like "What is the usage of FastAPI?" and verify it returns a hit. |
+| **UC-4.3: Return Cache Miss** | AC-3: If highest similarity < threshold, return `None`. | DB, BE | Run `search_cache` with a completely unrelated query like "How to cook pasta?". Verify it returns `False` (cache miss) and a low similarity score. |
 
 ---
 

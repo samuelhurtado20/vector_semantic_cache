@@ -16,11 +16,11 @@ When working on this project, adhere to the following guidelines and design rule
    - Generate the embedding of the incoming question using `text-embedding-004`.
    - Compare the embedding with the database records using cosine similarity.
    - If the similarity with any saved question is greater than or equal to the threshold (`SIMILARITY_THRESHOLD` - default `0.90` / 90%):
-     - Return the saved answer directly from the database (marking `"fuente": "cache_semantico"`).
+     - Return the saved response directly from the database (marking `"source": "semantic_cache"`).
    - Otherwise:
      - Query the Google Gemini API to get a new response.
      - Persist the question, response, and its corresponding vector embedding in the database.
-     - Return the retrieved response (marking `"fuente": "llm"`).
+     - Return the retrieved response (marking `"source": "llm"`).
 
 2. **Direct Persistence:**
    - Interactions are saved in their entirety. Do not use chunking or segmentation unless explicitly requested.
@@ -34,5 +34,5 @@ Any changes or extensions must respect the following environment variables in th
 ## 📁 Standard Endpoints
 Maintain and respect the contracts of the following endpoints:
 - `POST /chat`: Main interaction with chat and semantic cache.
-- `GET /preguntas`: List the history of saved interactions.
-- `POST /buscar-similitud`: Manual search of semantic similarity for testing and metrics.
+- `GET /questions`: List the history of saved interactions.
+- `POST /similarity-search`: Manual search of semantic similarity for testing and metrics.

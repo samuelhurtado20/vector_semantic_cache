@@ -27,24 +27,24 @@ No database schema changes are required for this story. The database is read/wri
 - [ ] **Task 1: Define Request and Response Schemas**
   - Create [schemas.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/schemas.py).
   - Define `ChatRequest` containing:
-    - `pregunta: str` (non-empty)
+    - `question: str` (non-empty)
   - Define `ChatResponse` containing:
-    - `fuente: str` (either `"cache_semantico"` or `"llm"`)
-    - `porcentaje_similitud: float` (cosine similarity score)
-    - `pregunta_actual: str`
-    - `pregunta_guardada: Optional[str] = None` (populated only on cache hit)
-    - `respuesta: str`
+    - `source: str` (either `"semantic_cache"` or `"llm"`)
+    - `similarity_percentage: float` (cosine similarity score)
+    - `current_question: str`
+    - `saved_question: Optional[str] = None` (populated only on cache hit)
+    - `response: str`
 - [ ] **Task 2: Implement `/chat` Route Logic**
   - In [main.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/main.py):
     - Define `POST /chat` accepting `ChatRequest` and injecting `db_session`.
-    - Generate embedding for `pregunta` using `services.gemini.get_embedding`.
-    - Check the cache using `services.cache_engine.buscar_en_cache`.
+    - Generate embedding for `question` using `services.gemini.get_embedding`.
+    - Check the cache using `services.cache_engine.search_cache`.
     - **On Hit (similarity $\ge$ threshold):**
-      - Return `ChatResponse` with `fuente="cache_semantico"`, matching details, and cached answer.
+      - Return `ChatResponse` with `source="semantic_cache"`, matching details, and cached answer.
     - **On Miss (similarity < threshold):**
       - Query Gemini using `services.gemini.generate_response`.
       - Save the query, response, and embedding vector to the DB.
-      - Return `ChatResponse` with `fuente="llm"`, similarity score, and Gemini response.
+      - Return `ChatResponse` with `source="llm"`, similarity score, and Gemini response.
 
 ---
 
@@ -52,10 +52,10 @@ No database schema changes are required for this story. The database is read/wri
 
 | Use Case | Acceptance Criteria | Tiers Touched | Verification Method |
 |---|---|---|---|
-| **UC-5.1: Request Format Validation** | AC-1: Expects a payload `{"pregunta": "..."}`. | BE | Send a request with a missing `pregunta` field or invalid type, and verify the server returns a `422 Unprocessable Entity` status code. |
-| **UC-5.2: Process Cache Hit** | AC-2: Returns cached response on threshold hit, marking `"fuente": "cache_semantico"`. | DB, BE | Insert a seed row. Send a highly similar request. Confirm the response `fuente` is `"cache_semantico"` and similarity is returned. |
-| **UC-5.3: Process Cache Miss** | AC-3: Generate embedding, query Gemini, persist, and return response marking `"fuente": "llm"`. | DB, BE | Send a unique request. Confirm response `fuente` is `"llm"`. Verify that the database now contains the new interaction row. |
-| **UC-5.4: Validate Response Structure** | AC-4: Response matches the exact schema contract. | BE | Assert that the response contains all required fields: `fuente`, `porcentaje_similitud`, `pregunta_actual`, and `respuesta`. |
+| **UC-5.1: Request Format Validation** | AC-1: Expects a payload `{"question": "..."}`. | BE | Send a request with a missing `question` field or invalid type, and verify the server returns a `422 Unprocessable Entity` status code. |
+| **UC-5.2: Process Cache Hit** | AC-2: Returns cached response on threshold hit, marking `"source": "semantic_cache"`. | DB, BE | Insert a seed row. Send a highly similar request. Confirm the response `source` is `"semantic_cache"` and similarity is returned. |
+| **UC-5.3: Process Cache Miss** | AC-3: Generate embedding, query Gemini, persist, and return response marking `"source": "llm"`. | DB, BE | Send a unique request. Confirm response `source` is `"llm"`. Verify that the database now contains the new interaction row. |
+| **UC-5.4: Validate Response Structure** | AC-4: Response matches the exact schema contract. | BE | Assert that the response contains all required fields: `source`, `similarity_percentage`, `current_question`, and `response`. |
 
 ---
 

@@ -11,24 +11,24 @@
 
 | Tier | Impact | Description |
 |---|---|---|
-| **Database** | Yes | Create the local SQLite database file and initialize the `cache_interacciones` table schema. |
+| **Database** | Yes | Create the local SQLite database file and initialize the `interaction_cache` table schema. |
 | **Backend** | Yes | Implement database initialization functions, session management, and SQLAlchemy models (or raw SQL queries) representing the interactions. |
 | **Frontend** | No | The project is a pure FastAPI backend system; no frontend client is built in this repository. |
 
 ---
 
 ## 3. Database Changes
-Create the table `cache_interacciones` in SQLite:
+Create the table `interaction_cache` in SQLite:
 
-### Table: `cache_interacciones`
+### Table: `interaction_cache`
 - **Columns:**
   - `id`: `INTEGER` (PRIMARY KEY, AUTOINCREMENT)
-  - `pregunta`: `TEXT` (NOT NULL)
-  - `respuesta`: `TEXT` (NOT NULL)
+  - `question`: `TEXT` (NOT NULL)
+  - `response`: `TEXT` (NOT NULL)
   - `embedding`: `TEXT` (NOT NULL, stores the 768-dimensional vector as a serialized JSON string of floats, e.g. `[0.012, -0.054, ...]`)
-  - `fecha_creacion`: `DATETIME` (NOT NULL, default: `CURRENT_TIMESTAMP`)
+  - `created_at`: `DATETIME` (NOT NULL, default: `CURRENT_TIMESTAMP`)
 - **Indexes:**
-  - Index on `pregunta` (optional, for lookup performance)
+  - Index on `question` (optional, for lookup performance)
 
 ---
 
@@ -40,7 +40,7 @@ Create the table `cache_interacciones` in SQLite:
   - Set up `sessionmaker` for local session retrieval and a base class for declarative ORM models.
 - [ ] **Task 2: Define ORM Schema Models**
   - Create [models.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/models.py).
-  - Define the `CacheInteraccion` model with fields representing the `cache_interacciones` table.
+  - Define the `InteractionCache` model with fields representing the `interaction_cache` table.
 - [ ] **Task 3: Implement Database Lifecycle Helpers**
   - Add DB initialization functions (`init_db`) to create tables on startup.
   - Implement a dependency `get_db` to yield session sessions for endpoint routing.
@@ -51,7 +51,7 @@ Create the table `cache_interacciones` in SQLite:
 
 | Use Case | Acceptance Criteria | Tiers Touched | Verification Method |
 |---|---|---|---|
-| **UC-2.1: Initialize Tables** | AC-1: A SQLite database is initialized using a URL specified in `DATABASE_URL`. AC-2: Table `cache_interacciones` is created. | DB, BE | Boot the application and verify that the file `chat_cache.db` is created in the root directory. Connect via `sqlite3` CLI and run `.schema cache_interacciones` to confirm column types. |
+| **UC-2.1: Initialize Tables** | AC-1: A SQLite database is initialized using a URL specified in `DATABASE_URL`. AC-2: Table `interaction_cache` is created. | DB, BE | Boot the application and verify that the file `chat_cache.db` is created in the root directory. Connect via `sqlite3` CLI and run `.schema interaction_cache` to confirm column types. |
 | **UC-2.2: Add and Fetch Interaction** | AC-3: Database helper functions are created to save/retrieve records. | BE | Run a Python unit test script that opens a DB session, inserts a mock record containing an embedding list, retrieves it, and asserts similarity values. |
 
 ---
