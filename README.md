@@ -47,7 +47,12 @@ A backend developed with **FastAPI**, **Pydantic**, and **SQLite** implementing 
 
 3. **Install dependencies:**
    ```bash
-   pip install fastapi uvicorn google-generativeai pydantic-settings numpy
+   pip install -r requirements.txt
+   ```
+
+   Or install manually:
+   ```bash
+   pip install fastapi uvicorn pydantic-settings google-genai numpy sqlalchemy pytest
    ```
 
 4. **Configure Environment Variables:**
@@ -72,6 +77,68 @@ The API will be available at:
 
 * **Interactive documentation (Swagger UI):** `http://127.0.0.1:8000/docs`
 * **Alternative documentation (ReDoc):** `http://127.0.0.1:8000/redoc`
+
+---
+
+## 🧪 Testing the Application
+
+The project uses **pytest** for test discovery and execution. Tests cover the cache engine, database layer, and the live Gemini SDK integration.
+
+### Run all tests
+
+```bash
+pytest
+```
+
+Or explicitly:
+
+```bash
+python -m pytest
+```
+
+### Run with verbose output
+
+```bash
+python -m pytest -v
+```
+
+### Run tests without live API calls
+
+`tests/test_gemini_service.py` requires a valid `GEMINI_API_KEY` because it calls the real Gemini API. To run only the isolated tests:
+
+```bash
+python -m pytest tests/test_cache_engine.py tests/test_database.py -v
+```
+
+### Run the live Gemini integration tests
+
+Make sure your `.env` file includes a valid key:
+
+```bash
+GEMINI_API_KEY=your_google_gemini_api_key
+```
+
+Then run:
+
+```bash
+python -m pytest tests/test_gemini_service.py -v
+```
+
+### Test the `/chat` endpoint manually
+
+Start the server:
+
+```bash
+uvicorn main:app --reload
+```
+
+Then send a request:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/chat" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is FastAPI?"}'
+```
 
 ---
 

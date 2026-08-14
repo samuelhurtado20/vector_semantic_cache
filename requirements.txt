@@ -4,3 +4,4 @@ pydantic-settings
 google-genai
 numpy
 sqlalchemy
+pytest
