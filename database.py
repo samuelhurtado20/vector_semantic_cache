@@ -42,8 +42,8 @@ def init_db(database_url: Optional[str] = None) -> Engine:
     return engine
 
 
-def get_db(database_url: Optional[str] = None) -> Generator[Session, None, None]:
-    session = get_session_factory(database_url)()
+def get_db() -> Generator[Session, None, None]:
+    session = get_session_factory()()
     try:
         yield session
     finally:
