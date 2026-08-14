@@ -1,7 +1,7 @@
 ---
 name: plan-us
 description: Use when the user wants a plan (NOT implementation) for a user story or feature — "create the plan", "plan the US/HU", "implementation plan", "crea el plan", "planea la US/HU". Drives plan mode; reads project memory, grounds the plan in the real codebase, and produces the house plan document (story understanding what/why/what-for → full-stack impact analysis database/backend/frontend → schema-level database changes → ordered create/modify plan in dependency order → use cases per acceptance criterion with verification method), asking every ambiguity instead of assuming. Leaves no loose ends: every use case must end functional and testable across all tiers it touches. Ends at an approved plan — never implements. Hands off to the `implement` skill.
-argument-hint: [user story file path | ADO work item id | pasted user story text]
+argument-hint: "[user story file path | ADO work item id | pasted user story text]"
 model: claude-fable-5
 effort: xhigh
 ---
