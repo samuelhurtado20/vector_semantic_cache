@@ -61,7 +61,7 @@ def save_interaction(session: Session, question: str, response: str, embedding: 
 
 
 def get_all_interactions(session: Session) -> List[InteractionCache]:
-    return session.query(InteractionCache).order_by(InteractionCache.created_at.asc()).all()
+    return session.query(InteractionCache).order_by(InteractionCache.created_at.desc()).all()
 
 
 def get_latest_interaction(session: Session) -> Optional[InteractionCache]:

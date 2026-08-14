@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -26,3 +27,14 @@ class ChatResponse(BaseModel):
         description="The closest cached question when a semantic cache hit occurs.",
     )
     response: str = Field(..., description="Answer returned to the user.")
+
+
+class InteractionHistory(BaseModel):
+    """Response item for the history endpoint; excludes the raw embedding vector."""
+
+    id: int = Field(..., description="Unique identifier of the cached interaction.")
+    question: str = Field(..., description="Question that was stored.")
+    response: str = Field(..., description="Answer associated with the stored question.")
+    created_at: datetime = Field(..., description="UTC timestamp when the interaction was stored.")
+
+    model_config = {"from_attributes": True}

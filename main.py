@@ -4,8 +4,9 @@ from fastapi import Depends, FastAPI
 from sqlalchemy.orm import Session
 
 from config import settings
-from database import get_db, init_db, save_interaction
-from schemas import ChatRequest, ChatResponse
+from database import get_all_interactions, get_db, init_db, save_interaction
+from models import InteractionCache
+from schemas import ChatRequest, ChatResponse, InteractionHistory
 from services.cache_engine import search_cache
 from services.gemini import generate_response, get_embedding
 
@@ -70,3 +71,19 @@ async def chat(request: ChatRequest, db_session: Session = Depends(get_db)) -> C
         current_question=question,
         response=llm_response,
     )
+
+
+@app.get(
+    "/questions",
+    response_model=list[InteractionHistory],
+    tags=["History"],
+    summary="Retrieve interaction history",
+)
+async def get_questions(db_session: Session = Depends(get_db)) -> list[InteractionCache]:
+    """
+    Retrieve all stored interactions from the semantic cache.
+
+    Returns a list of question-response records sorted by creation time, newest first.
+    The raw embedding vectors are excluded from the response payload.
+    """
+    return get_all_interactions(db_session)
