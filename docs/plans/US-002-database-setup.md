@@ -34,14 +34,14 @@ Create the table `interaction_cache` in SQLite:
 
 ## 4. Ordered Implementation Plan
 
-- [ ] **Task 1: Set up database session engine**
+- [x] ✅ **Task 1: Set up database session engine**
   - Create [database.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/database.py).
   - Configure the SQLAlchemy engine with `DATABASE_URL` from the settings.
   - Set up `sessionmaker` for local session retrieval and a base class for declarative ORM models.
-- [ ] **Task 2: Define ORM Schema Models**
+- [x] ✅ **Task 2: Define ORM Schema Models**
   - Create [models.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/models.py).
   - Define the `InteractionCache` model with fields representing the `interaction_cache` table.
-- [ ] **Task 3: Implement Database Lifecycle Helpers**
+- [x] ✅ **Task 3: Implement Database Lifecycle Helpers**
   - Add DB initialization functions (`init_db`) to create tables on startup.
   - Implement a dependency `get_db` to yield session sessions for endpoint routing.
 

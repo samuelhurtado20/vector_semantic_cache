@@ -24,11 +24,11 @@ No database schema changes are required for this story. The database is queried 
 
 ## 4. Ordered Implementation Plan
 
-- [ ] **Task 1: Implement Cosine Similarity Calculation**
+- [x] ✅ **Task 1: Implement Cosine Similarity Calculation**
   - Create [services/cache_engine.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/services/cache_engine.py).
   - Define `calculate_cosine_similarity(vecA: list[float], vecB: list[float]) -> float` using NumPy:
     $$\text{similarity} = \frac{\vec{A} \cdot \vec{B}}{\|\vec{A}\| \|\vec{B}\|}$$
-- [ ] **Task 2: Implement Cache Search Logic**
+- [x] ✅ **Task 2: Implement Cache Search Logic**
   - Implement `search_cache(question_embedding: list[float], db_session) -> tuple[bool, dict | None, float]`:
     - Query all interactions from `interaction_cache`.
     - Deserialize each embedding JSON string to a list of floats.

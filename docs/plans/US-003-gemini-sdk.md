@@ -24,15 +24,15 @@ No database changes are required for this story.
 
 ## 4. Ordered Implementation Plan
 
-- [x] **Task 1: Setup Gemini SDK initialization**
+- [x] ✅ **Task 1: Setup Gemini SDK initialization**
   - Create [services/gemini.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/services/gemini.py).
   - Import `google.generativeai as genai`.
   - Configure the client using `genai.configure(api_key=settings.gemini_api_key)`.
-- [x] **Task 2: Implement Vector Embedding service**
+- [x] ✅ **Task 2: Implement Vector Embedding service**
   - Implement a function `get_embedding(text: str) -> list[float]`.
   - Call the API using `genai.embed_content(model="models/text-embedding-004", content=text)`.
   - Extract and return the embedding float list (768 dimensions).
-- [x] **Task 3: Implement Text Generation service**
+- [x] ✅ **Task 3: Implement Text Generation service**
   - Implement a function `generate_response(prompt: str) -> str`.
   - Use `genai.GenerativeModel("gemini-1.5-flash")` to initialize the chat/generation client.
   - Call `generate_content(prompt)` and return the text block.
