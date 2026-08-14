@@ -29,7 +29,8 @@ async def health_check():
     return {
         "status": "ok",
         "threshold": settings.similarity_threshold,
-        "database": settings.database_url
+        "database": settings.database_url,
+        "gemini_model": settings.gemini_model,
     }
 
 

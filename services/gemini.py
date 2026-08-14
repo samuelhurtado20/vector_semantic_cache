@@ -52,7 +52,7 @@ def generate_response(prompt: str) -> str:
         The generated text response as a string.
     """
     response = _client.models.generate_content(
-        model="gemini-flash-latest",
+        model=settings.gemini_model,
         contents=prompt,
     )
     return response.text
