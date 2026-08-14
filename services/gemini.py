@@ -43,7 +43,9 @@ def generate_response(prompt: str) -> str:
     """
     Generate a text response from the Gemini chat model.
 
-    Uses `gemini-2.0-flash` for fast, cost-efficient generation.
+    Uses a stateless chat session via `client.chats.create` and `send_message`,
+    which is the recommended way to interact with the model and avoids the
+    "automatic function calling" warning associated with `generate_content`.
 
     Args:
         prompt: The user prompt or question to send to the model.
@@ -51,8 +53,6 @@ def generate_response(prompt: str) -> str:
     Returns:
         The generated text response as a string.
     """
-    response = _client.models.generate_content(
-        model=settings.gemini_model,
-        contents=prompt,
-    )
+    chat = _client.chats.create(model=settings.gemini_model)
+    response = chat.send_message(prompt)
     return response.text
