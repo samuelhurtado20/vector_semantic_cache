@@ -104,24 +104,18 @@ python -m pytest -v
 
 ### Run tests without live API calls
 
-`tests/test_gemini_service.py` requires a valid `GEMINI_API_KEY` because it calls the real Gemini API. To run only the isolated tests:
+By default, all tests mock the Gemini SDK, so no API key is required:
 
 ```bash
-python -m pytest tests/test_cache_engine.py tests/test_database.py -v
+python -m pytest -v
 ```
 
 ### Run the live Gemini integration tests
 
-Make sure your `.env` file includes a valid key:
+Make sure your `.env` file includes a valid key, then run tests marked with `integration`:
 
 ```bash
-GEMINI_API_KEY=your_google_gemini_api_key
-```
-
-Then run:
-
-```bash
-python -m pytest tests/test_gemini_service.py -v
+python -m pytest -v -m integration
 ```
 
 ### Test the `/chat` endpoint manually
