@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 from sqlalchemy.orm import Session
@@ -11,18 +12,22 @@ from schemas import ChatRequest, ChatResponse, HealthResponse, InteractionHistor
 from services.cache_engine import search_cache
 from services.gemini import generate_response, get_embedding
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize the database on application startup."""
+    init_db()
+    yield
+
+
 app = FastAPI(
     title="Vector Semantic Cache Chat API",
     description="FastAPI backend utilizing SQLite semantic cache and Google Gemini API.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 register_exception_handlers(app)
-
-
-@app.on_event("startup")
-def startup_event() -> None:
-    init_db()
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
