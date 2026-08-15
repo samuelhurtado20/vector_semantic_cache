@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 
 from config import settings
 from database import get_all_interactions, get_db, init_db, save_interaction
+from exceptions import DatabaseError, register_exception_handlers
 from models import InteractionCache
-from schemas import ChatRequest, ChatResponse, InteractionHistory
+from schemas import ChatRequest, ChatResponse, HealthResponse, InteractionHistory
 from services.cache_engine import search_cache
 from services.gemini import generate_response, get_embedding
 
@@ -16,23 +17,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
+register_exception_handlers(app)
+
 
 @app.on_event("startup")
 def startup_event() -> None:
     init_db()
 
 
-@app.get("/health", tags=["Health"])
-async def health_check():
+@app.get("/health", response_model=HealthResponse, tags=["Health"])
+async def health_check() -> HealthResponse:
     """
     Simple health check endpoint to verify that the API is running and configured correctly.
+
+    Does not expose connection strings, API keys, or model names.
     """
-    return {
-        "status": "ok",
-        "threshold": settings.similarity_threshold,
-        "database": settings.database_url,
-        "gemini_model": settings.gemini_model,
-    }
+    return HealthResponse(status="ok", threshold=settings.similarity_threshold)
 
 
 @app.post("/chat", response_model=ChatResponse, tags=["Chat"], summary="Process a chat question")
@@ -62,8 +62,12 @@ async def chat(request: ChatRequest, db_session: Session = Depends(get_db)) -> C
         )
 
     llm_response = await asyncio.to_thread(generate_response, question)
-    save_interaction(db_session, question=question, response=llm_response, embedding=question_embedding)
-    db_session.commit()
+    try:
+        save_interaction(db_session, question=question, response=llm_response, embedding=question_embedding)
+        db_session.commit()
+    except Exception as exc:
+        db_session.rollback()
+        raise DatabaseError(f"Failed to persist interaction: {exc}") from exc
 
     return ChatResponse(
         source="llm",

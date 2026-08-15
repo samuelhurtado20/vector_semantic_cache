@@ -38,3 +38,17 @@ class InteractionHistory(BaseModel):
     created_at: datetime = Field(..., description="UTC timestamp when the interaction was stored.")
 
     model_config = {"from_attributes": True}
+
+
+class HealthResponse(BaseModel):
+    """Response body returned by the health check endpoint."""
+
+    status: str = Field(..., description="Overall API status.")
+    threshold: float = Field(..., description="Configured similarity threshold.")
+
+
+class ErrorResponse(BaseModel):
+    """Standard error response body returned by global exception handlers."""
+
+    code: str = Field(..., description="Machine-readable error code.")
+    detail: str = Field(..., description="Human-readable error description.")

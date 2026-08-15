@@ -10,33 +10,44 @@ the deprecated `google-generativeai` package.
 """
 
 from google import genai
+from google.genai import errors as genai_errors
 
 from config import settings
+from exceptions import ConfigurationError, GeminiAPIError
+
 
 # Instantiate a single Client using the API key from settings.
 # This replaces the deprecated genai.configure() global call.
+if not settings.gemini_api_key:
+    raise ConfigurationError("GEMINI_API_KEY is not configured.")
+
 _client = genai.Client(api_key=settings.gemini_api_key)
 
 
 def get_embedding(text: str) -> list[float]:
     """
     Generate a vector embedding for the given text using the
-    `text-embedding-004` model (768 dimensions).
+    `gemini-embedding-001` model (3072 dimensions).
 
     Args:
         text: The input text to embed.
 
     Returns:
-        A list of 768 floats representing the dense vector embedding.
+        A list of 3072 floats representing the dense vector embedding.
     """
-    response = _client.models.embed_content(
-        model="gemini-embedding-001",
-        contents=text,
-    )
-    # response.embeddings is a list of ContentEmbedding objects;
-    # the first entry holds the values for our single input.
-    # gemini-embedding-001 produces 3072-dimensional vectors.
-    return response.embeddings[0].values
+    try:
+        response = _client.models.embed_content(
+            model="gemini-embedding-001",
+            contents=text,
+        )
+        # response.embeddings is a list of ContentEmbedding objects;
+        # the first entry holds the values for our single input.
+        # gemini-embedding-001 produces 3072-dimensional vectors.
+        return response.embeddings[0].values
+    except genai_errors.APIError as exc:
+        raise GeminiAPIError(f"Gemini embedding request failed: {exc}") from exc
+    except Exception as exc:
+        raise GeminiAPIError(f"Unexpected error calling Gemini embedding API: {exc}") from exc
 
 
 def generate_response(prompt: str) -> str:
@@ -53,6 +64,11 @@ def generate_response(prompt: str) -> str:
     Returns:
         The generated text response as a string.
     """
-    chat = _client.chats.create(model=settings.gemini_model)
-    response = chat.send_message(prompt)
-    return response.text
+    try:
+        chat = _client.chats.create(model=settings.gemini_model)
+        response = chat.send_message(prompt)
+        return response.text
+    except genai_errors.APIError as exc:
+        raise GeminiAPIError(f"Gemini chat request failed: {exc}") from exc
+    except Exception as exc:
+        raise GeminiAPIError(f"Unexpected error calling Gemini chat API: {exc}") from exc
