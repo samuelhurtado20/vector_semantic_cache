@@ -8,8 +8,15 @@ from config import settings
 from database import get_all_interactions, get_db, init_db, save_interaction
 from exceptions import DatabaseError, register_exception_handlers
 from models import InteractionCache
-from schemas import ChatRequest, ChatResponse, HealthResponse, InteractionHistory
-from services.cache_engine import search_cache
+from schemas import (
+    ChatRequest,
+    ChatResponse,
+    HealthResponse,
+    InteractionHistory,
+    SimilaritySearchRequest,
+    SimilaritySearchResponse,
+)
+from services.cache_engine import find_closest_match, search_cache
 from services.gemini import generate_response, get_embedding
 
 
@@ -96,3 +103,34 @@ async def get_questions(db_session: Session = Depends(get_db)) -> list[Interacti
     The raw embedding vectors are excluded from the response payload.
     """
     return get_all_interactions(db_session)
+
+
+@app.post(
+    "/similarity-search",
+    response_model=SimilaritySearchResponse,
+    tags=["Search"],
+    summary="Manual semantic similarity search",
+)
+async def similarity_search(
+    request: SimilaritySearchRequest,
+    db_session: Session = Depends(get_db),
+) -> SimilaritySearchResponse:
+    """
+    Find the most similar cached question to the input, ignoring the threshold.
+
+    This endpoint is read-only: it generates an embedding for the input question,
+    compares it against all stored embeddings, and returns the closest match along
+    with the similarity score. It does not call the LLM or persist anything.
+    """
+    question = request.question
+    question_embedding = await asyncio.to_thread(get_embedding, question)
+    matched_record, best_similarity = await asyncio.to_thread(
+        find_closest_match, question_embedding, db_session
+    )
+
+    return SimilaritySearchResponse(
+        similarity_percentage=best_similarity,
+        current_question=question,
+        saved_question=matched_record.question if matched_record else None,
+        saved_response=matched_record.response if matched_record else None,
+    )

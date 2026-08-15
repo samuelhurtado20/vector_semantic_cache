@@ -44,6 +44,38 @@ def calculate_cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float
     return float(np.dot(a, b) / (norm_a * norm_b))
 
 
+def _find_best_match(
+    question_embedding: list[float],
+    records: list[InteractionCache],
+) -> tuple[InteractionCache | None, float]:
+    """
+    Find the stored record with the highest cosine similarity to the query.
+
+    Args:
+        question_embedding: The embedding vector of the incoming question.
+        records: List of stored interaction cache records.
+
+    Returns:
+        A 2-tuple of the best matching record (or None if records is empty)
+        and the highest similarity score (0.0 if records is empty).
+    """
+    if not records:
+        return None, 0.0
+
+    best_record: InteractionCache | None = None
+    best_similarity: float = -1.0
+
+    for record in records:
+        stored_embedding = load_embedding(record)
+        similarity = calculate_cosine_similarity(question_embedding, stored_embedding)
+
+        if similarity > best_similarity:
+            best_similarity = similarity
+            best_record = record
+
+    return best_record, best_similarity
+
+
 def search_cache(
     question_embedding: list[float],
     db_session: Session,
@@ -68,20 +100,28 @@ def search_cache(
           is empty).
     """
     records = get_all_interactions(db_session)
-
-    if not records:
-        return False, None, 0.0
-
-    best_record: InteractionCache | None = None
-    best_similarity: float = -1.0
-
-    for record in records:
-        stored_embedding = load_embedding(record)
-        similarity = calculate_cosine_similarity(question_embedding, stored_embedding)
-
-        if similarity > best_similarity:
-            best_similarity = similarity
-            best_record = record
-
+    best_record, best_similarity = _find_best_match(question_embedding, records)
     is_hit = best_similarity >= settings.similarity_threshold
     return is_hit, (best_record if is_hit else None), best_similarity
+
+
+def find_closest_match(
+    question_embedding: list[float],
+    db_session: Session,
+) -> tuple[InteractionCache | None, float]:
+    """
+    Return the closest stored interaction regardless of the similarity threshold.
+
+    This is a read-only helper intended for the `/similarity-search` debug
+    endpoint. It never calls the LLM and never persists anything.
+
+    Args:
+        question_embedding: The embedding vector of the incoming question.
+        db_session: An active SQLAlchemy session.
+
+    Returns:
+        A 2-tuple of the closest matching record (or None if the DB is empty)
+        and the highest similarity score found (0.0 if the DB is empty).
+    """
+    records = get_all_interactions(db_session)
+    return _find_best_match(question_embedding, records)

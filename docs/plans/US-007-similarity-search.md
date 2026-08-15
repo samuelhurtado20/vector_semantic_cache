@@ -25,7 +25,7 @@ No database schema changes are required for this story.
 
 ## 4. Ordered Implementation Plan
 
-- [ ] **Task 1: Define Similarity Search Schemas**
+- [x] **Task 1: Define Similarity Search Schemas** ✅
   - In [schemas.py](../../../../schemas.py), define `SimilaritySearchRequest`:
     - `question: str` (non-empty)
   - Define `SimilaritySearchResponse`:
@@ -33,12 +33,12 @@ No database schema changes are required for this story.
     - `current_question: str`
     - `saved_question: Optional[str] = None`
     - `saved_response: Optional[str] = None`
-- [ ] **Task 2: Implement `/similarity-search` Route Logic**
+- [x] **Task 2: Implement `/similarity-search` Route Logic** ✅
   - In [main.py](../../../../main.py):
     - Define a `POST /similarity-search` route accepting `SimilaritySearchRequest` and injecting `db_session`.
     - Generate embedding for the input `question` using `services.gemini.get_embedding`.
-    - Perform a similarity sweep using `services.cache_engine.search_cache`, ignoring the similarity threshold criteria to return the best match.
-    - If the DB has no interactions, return a response with `similarity_percentage=0.0`, and empty string placeholders.
+    - Perform a similarity sweep using `services.cache_engine.find_closest_match`, ignoring the similarity threshold criteria to return the best match.
+    - If the DB has no interactions, return a response with `similarity_percentage=0.0`, and `None` placeholders.
     - Return the best match's details in a `SimilaritySearchResponse` object.
 
 ---
@@ -47,9 +47,9 @@ No database schema changes are required for this story.
 
 | Use Case | Acceptance Criteria | Tiers Touched | Verification Method |
 |---|---|---|---|
-| **UC-7.1: Validate Search Input** | AC-1: Expects a payload `{"question": "..."}`. | BE | Send a request with a blank query. Verify validation fails with `422 Unprocessable Entity`. |
-| **UC-7.2: Return Closest Match** | AC-2: Computes similarity against all saved records and returns the closest match even if below threshold. | DB, BE | Seed "How does python work?". Send request for "How to bake a cake?" (expected low similarity, e.g. ~0.35). Confirm it returns the python question as the closest match with the similarity score. |
-| **UC-7.3: Check Output Keys** | AC-3: Returns fields: `similarity_percentage`, `current_question`, `saved_question`, `saved_response`. | BE | Inspect JSON output from `POST /similarity-search` to ensure all fields are correctly populated. |
+| **UC-7.1: Validate Search Input** ✅ | AC-1: Expects a payload `{"question": "..."}`. | BE | Send a request with a blank query. Verify validation fails with `422 Unprocessable Entity`. |
+| **UC-7.2: Return Closest Match** ✅ | AC-2: Computes similarity against all saved records and returns the closest match even if below threshold. | DB, BE | Seed "How does python work?". Send request for "How to bake a cake?" (expected low similarity, e.g. ~0.35). Confirm it returns the python question as the closest match with the similarity score. |
+| **UC-7.3: Check Output Keys** ✅ | AC-3: Returns fields: `similarity_percentage`, `current_question`, `saved_question`, `saved_response`. | BE | Inspect JSON output from `POST /similarity-search` to ensure all fields are correctly populated. |
 
 ---
 

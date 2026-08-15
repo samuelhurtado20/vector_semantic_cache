@@ -52,3 +52,27 @@ class ErrorResponse(BaseModel):
 
     code: str = Field(..., description="Machine-readable error code.")
     detail: str = Field(..., description="Human-readable error description.")
+
+
+class SimilaritySearchRequest(BaseModel):
+    """Request body for the manual similarity-search endpoint."""
+
+    question: str = Field(..., min_length=1, description="Question to compare against the cache.")
+
+
+class SimilaritySearchResponse(BaseModel):
+    """Response body returned by the manual similarity-search endpoint."""
+
+    similarity_percentage: float = Field(
+        ...,
+        description="Cosine similarity score between the current and the closest cached question (0.0 to 1.0).",
+    )
+    current_question: str = Field(..., description="The question received in the request.")
+    saved_question: Optional[str] = Field(
+        None,
+        description="The closest cached question, if any records exist.",
+    )
+    saved_response: Optional[str] = Field(
+        None,
+        description="The response associated with the closest cached question, if any records exist.",
+    )

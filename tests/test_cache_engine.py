@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from services.cache_engine import calculate_cosine_similarity, search_cache
+from services.cache_engine import calculate_cosine_similarity, find_closest_match, search_cache
 
 
 # ---------------------------------------------------------------------------
@@ -154,5 +154,48 @@ class TestSearchCache:
         is_hit, matched_record, similarity = search_cache(base_vec, MagicMock())
 
         assert is_hit is True
+        assert matched_record is close_record
+        assert similarity > 0.90
+
+
+class TestFindClosestMatch:
+    def test_empty_db_returns_none_and_zero_similarity(self, monkeypatch):
+        monkeypatch.setattr(
+            "services.cache_engine.get_all_interactions", lambda _: []
+        )
+        record, similarity = find_closest_match([0.1, 0.2], MagicMock())
+
+        assert record is None
+        assert similarity == 0.0
+
+    def test_returns_closest_match_even_below_threshold(self, monkeypatch):
+        vec_stored = [1.0, 0.0, 0.0]
+        vec_query = [0.0, 1.0, 0.0]  # orthogonal → similarity = 0.0
+        stored = _make_record("How does Python work?", "Python is a language.", vec_stored)
+
+        monkeypatch.setattr(
+            "services.cache_engine.get_all_interactions", lambda _: [stored]
+        )
+
+        matched_record, similarity = find_closest_match(vec_query, MagicMock())
+
+        assert matched_record is stored
+        assert similarity == pytest.approx(0.0, abs=1e-6)
+
+    def test_returns_best_match_among_multiple_records(self, monkeypatch):
+        base_vec = [1.0, 0.0, 0.0]
+        close_vec = [0.99, 0.14, 0.0]   # high similarity
+        far_vec = [0.0, 1.0, 0.0]        # low similarity
+
+        close_record = _make_record("Close question", "Close answer.", close_vec)
+        far_record = _make_record("Far question", "Far answer.", far_vec)
+
+        monkeypatch.setattr(
+            "services.cache_engine.get_all_interactions",
+            lambda _: [far_record, close_record],
+        )
+
+        matched_record, similarity = find_closest_match(base_vec, MagicMock())
+
         assert matched_record is close_record
         assert similarity > 0.90
