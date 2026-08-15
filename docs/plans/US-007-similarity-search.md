@@ -4,6 +4,7 @@
 - **What:** Create a manual testing endpoint `POST /similarity-search` that calculates similarity between the input question and all saved queries in the SQLite database, returning the closest match regardless of whether it meets the threshold.
 - **Why:** Allows developers and testers to observe similarity scores to evaluate cache tuning, troubleshoot false hits, and calibrate the threshold.
 - **What For:** Provides a debug tool to inspect how close user queries are to existing cache definitions.
+- **Language Decision:** The public API uses English paths and field names to stay consistent with the existing `/chat` and `/questions` endpoints and the current code.
 
 ---
 
@@ -25,7 +26,7 @@ No database schema changes are required for this story.
 ## 4. Ordered Implementation Plan
 
 - [ ] **Task 1: Define Similarity Search Schemas**
-  - In [schemas.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/schemas.py), define `SimilaritySearchRequest`:
+  - In [schemas.py](../../../../schemas.py), define `SimilaritySearchRequest`:
     - `question: str` (non-empty)
   - Define `SimilaritySearchResponse`:
     - `similarity_percentage: float`
@@ -33,7 +34,7 @@ No database schema changes are required for this story.
     - `saved_question: Optional[str] = None`
     - `saved_response: Optional[str] = None`
 - [ ] **Task 2: Implement `/similarity-search` Route Logic**
-  - In [main.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/main.py):
+  - In [main.py](../../../../main.py):
     - Define a `POST /similarity-search` route accepting `SimilaritySearchRequest` and injecting `db_session`.
     - Generate embedding for the input `question` using `services.gemini.get_embedding`.
     - Perform a similarity sweep using `services.cache_engine.search_cache`, ignoring the similarity threshold criteria to return the best match.

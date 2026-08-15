@@ -8,7 +8,7 @@ A backend developed with **FastAPI**, **Pydantic**, and **SQLite** implementing 
 
 * **FastAPI & Pydantic:** Fast, validated, and automatically documented endpoints via Swagger/OpenAPI.
 * **SQLite:** Lightweight local storage for questions, answers, and their corresponding embeddings.
-* **Google Gemini Integration:** Uses official Google models for text generation and embeddings (`text-embedding-004` and chat models).
+* **Google Gemini Integration:** Uses official Google models for text generation and embeddings (`gemini-embedding-001`, 3072 dimensions, and chat models).
 * **Semantic Cache (Embedding Similarity):**
   * For each incoming question, its vector embedding is generated.
   * It is compared against previously stored embeddings in the database using cosine similarity.
@@ -24,7 +24,7 @@ A backend developed with **FastAPI**, **Pydantic**, and **SQLite** implementing 
 * **FastAPI**
 * **Pydantic / Pydantic Settings**
 * **SQLite** (using raw vector manipulation or math computation in Python/NumPy)
-* **Google GenAI SDK** (`google-generativeai`)
+* **Google GenAI SDK** (`google-genai`)
 
 ---
 
@@ -139,6 +139,8 @@ curl -X POST "http://127.0.0.1:8000/chat" \
   -H "Content-Type: application/json" \
   -d '{"question": "What is FastAPI?"}'
 ```
+
+*Note: The public API contract uses English paths and field names (`/chat`, `source`, `similarity_percentage`). This aligns the README, agents.md, and implementation.*
 
 ---
 

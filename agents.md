@@ -8,12 +8,12 @@ When working on this project, adhere to the following guidelines and design rule
 - **Language:** Python 3.10+
 - **Web Framework:** FastAPI, using Pydantic for validation and Pydantic Settings for configuration.
 - **Database:** SQLite (`sqlite:///./chat_cache.db` by default) to store questions, answers, and vector embeddings.
-- **Embeddings:** Google GenAI SDK (`google-generativeai`) using the `text-embedding-004` model.
+- **Embeddings:** Google GenAI SDK (`google-genai`) using the `gemini-embedding-001` model (3072 dimensions).
 - **Vector Math:** Cosine similarity calculated with NumPy or via direct mathematical computation in Python/SQLite.
 
 ## 📌 Semantic Cache Logic
 1. **Query Flow (`POST /chat`):**
-   - Generate the embedding of the incoming question using `text-embedding-004`.
+   - Generate the embedding of the incoming question using `gemini-embedding-001`.
    - Compare the embedding with the database records using cosine similarity.
    - If the similarity with any saved question is greater than or equal to the threshold (`SIMILARITY_THRESHOLD` - default `0.90` / 90%):
      - Return the saved response directly from the database (marking `"source": "semantic_cache"`).
