@@ -9,11 +9,16 @@ Uses the `google-genai` package (google.genai), which supersedes
 the deprecated `google-generativeai` package.
 """
 
+import logging
+import time
+
 from google import genai
 from google.genai import errors as genai_errors
 
 from config import settings
 from exceptions import ConfigurationError, GeminiAPIError
+
+logger = logging.getLogger(__name__)
 
 
 # Instantiate a single Client using the API key from settings.
@@ -35,6 +40,7 @@ def get_embedding(text: str) -> list[float]:
     Returns:
         A list of 3072 floats representing the dense vector embedding.
     """
+    _t0 = time.perf_counter()
     try:
         response = _client.models.embed_content(
             model="gemini-embedding-001",
@@ -43,10 +49,14 @@ def get_embedding(text: str) -> list[float]:
         # response.embeddings is a list of ContentEmbedding objects;
         # the first entry holds the values for our single input.
         # gemini-embedding-001 produces 3072-dimensional vectors.
-        return response.embeddings[0].values
+        values = response.embeddings[0].values
+        logger.info("embedding_generated elapsed_ms=%.1f", (time.perf_counter() - _t0) * 1000)
+        return values
     except genai_errors.APIError as exc:
+        logger.error("embedding_failed error=%s", exc)
         raise GeminiAPIError(f"Gemini embedding request failed: {exc}") from exc
     except Exception as exc:
+        logger.error("embedding_failed error=%s", exc)
         raise GeminiAPIError(f"Unexpected error calling Gemini embedding API: {exc}") from exc
 
 
@@ -64,11 +74,15 @@ def generate_response(prompt: str) -> str:
     Returns:
         The generated text response as a string.
     """
+    _t0 = time.perf_counter()
     try:
         chat = _client.chats.create(model=settings.gemini_model)
         response = chat.send_message(prompt)
+        logger.info("response_generated elapsed_ms=%.1f", (time.perf_counter() - _t0) * 1000)
         return response.text
     except genai_errors.APIError as exc:
+        logger.error("response_failed error=%s", exc)
         raise GeminiAPIError(f"Gemini chat request failed: {exc}") from exc
     except Exception as exc:
+        logger.error("response_failed error=%s", exc)
         raise GeminiAPIError(f"Unexpected error calling Gemini chat API: {exc}") from exc

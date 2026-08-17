@@ -6,11 +6,15 @@ register FastAPI exception handlers that return clean, consistent JSON
 responses without leaking stack traces or internal details.
 """
 
+import logging
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from schemas import ErrorResponse
+
+logger = logging.getLogger(__name__)
 
 
 class ApplicationError(Exception):
@@ -61,6 +65,7 @@ async def request_validation_error_handler(
     exc: RequestValidationError,
 ) -> JSONResponse:
     """Return a structured 422 response for Pydantic validation errors."""
+    logger.warning("validation_error path=%s detail=%s", request.url.path, str(exc)[:200])
     return _error_response(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         code="validation_error",
@@ -70,6 +75,7 @@ async def request_validation_error_handler(
 
 async def application_error_handler(request: Request, exc: ApplicationError) -> JSONResponse:
     """Handle all domain-specific application errors."""
+    logger.warning("application_error code=%s path=%s detail=%s", exc.code, request.url.path, exc.detail)
     return _error_response(
         status_code=exc.status_code,
         code=exc.code,
@@ -79,6 +85,7 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Catch-all handler to avoid leaking stack traces or internal details."""
+    logger.error("unexpected_error path=%s", request.url.path, exc_info=True)
     return _error_response(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         code="internal_error",

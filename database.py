@@ -60,6 +60,11 @@ def save_interaction(session: Session, question: str, response: str, embedding: 
     return record
 
 
+def get_all_records(session: Session) -> List[InteractionCache]:
+    """Load all records including embeddings; used by the similarity search engine."""
+    return session.query(InteractionCache).order_by(InteractionCache.created_at.desc()).all()
+
+
 def get_all_interactions(session: Session) -> List[InteractionCache]:
     return (
         session.query(InteractionCache)

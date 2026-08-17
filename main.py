@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import Body, Depends, FastAPI, Request
@@ -23,11 +25,23 @@ from schemas import (
 from services.cache_engine import find_closest_match, search_cache
 from services.gemini import generate_response, get_embedding
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)-8s] %(name)s — %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize the database on application startup."""
     init_db()
+    logger.info(
+        "startup similarity_threshold=%.2f database_url=%s",
+        settings.similarity_threshold,
+        settings.database_url,
+    )
     yield
 
 
@@ -74,6 +88,7 @@ async def chat(request: Request, body: ChatRequest = Body(...), db_session: Sess
     - On cache miss, queries Gemini, persists the new interaction, and returns the LLM answer.
     """
     question = body.question
+    _t0 = time.perf_counter()
 
     question_embedding = await asyncio.to_thread(get_embedding, question)
     is_hit, matched_record, best_similarity = await asyncio.to_thread(
@@ -81,6 +96,12 @@ async def chat(request: Request, body: ChatRequest = Body(...), db_session: Sess
     )
 
     if is_hit and matched_record is not None:
+        logger.info(
+            "cache_hit similarity=%.4f elapsed_ms=%.1f question=%r",
+            best_similarity,
+            (time.perf_counter() - _t0) * 1000,
+            question[:80],
+        )
         return ChatResponse(
             source="semantic_cache",
             similarity_percentage=best_similarity,
@@ -97,6 +118,12 @@ async def chat(request: Request, body: ChatRequest = Body(...), db_session: Sess
         db_session.rollback()
         raise DatabaseError(f"Failed to persist interaction: {exc}") from exc
 
+    logger.info(
+        "cache_miss similarity=%.4f elapsed_ms=%.1f question=%r",
+        best_similarity,
+        (time.perf_counter() - _t0) * 1000,
+        question[:80],
+    )
     return ChatResponse(
         source="llm",
         similarity_percentage=best_similarity,
