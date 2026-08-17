@@ -5,7 +5,7 @@ from typing import Generator, List, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, load_only, sessionmaker
 from sqlalchemy.pool import NullPool
 
 from config import settings
@@ -61,7 +61,12 @@ def save_interaction(session: Session, question: str, response: str, embedding: 
 
 
 def get_all_interactions(session: Session) -> List[InteractionCache]:
-    return session.query(InteractionCache).order_by(InteractionCache.created_at.desc()).all()
+    return (
+        session.query(InteractionCache)
+        .options(load_only(InteractionCache.id, InteractionCache.question, InteractionCache.response, InteractionCache.created_at))
+        .order_by(InteractionCache.created_at.desc())
+        .all()
+    )
 
 
 def get_latest_interaction(session: Session) -> Optional[InteractionCache]:
