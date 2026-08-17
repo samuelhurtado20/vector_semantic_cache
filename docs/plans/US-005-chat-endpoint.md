@@ -24,7 +24,7 @@ No database schema changes are required for this story. The database is read/wri
 
 ## 4. Ordered Implementation Plan
 
-- [ ] **Task 1: Define Request and Response Schemas**
+- [x] ✅ **Task 1: Define Request and Response Schemas**
   - Create [schemas.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/schemas.py).
   - Define `ChatRequest` containing:
     - `question: str` (non-empty)
@@ -34,7 +34,7 @@ No database schema changes are required for this story. The database is read/wri
     - `current_question: str`
     - `saved_question: Optional[str] = None` (populated only on cache hit)
     - `response: str`
-- [ ] **Task 2: Implement `/chat` Route Logic**
+- [x] ✅ **Task 2: Implement `/chat` Route Logic**
   - In [main.py](file:///c:/Users/Usuario/Documents/git_repositories/vector_semantic_cache/main.py):
     - Define `POST /chat` accepting `ChatRequest` and injecting `db_session`.
     - Generate embedding for `question` using `services.gemini.get_embedding`.
@@ -52,10 +52,10 @@ No database schema changes are required for this story. The database is read/wri
 
 | Use Case | Acceptance Criteria | Tiers Touched | Verification Method |
 |---|---|---|---|
-| **UC-5.1: Request Format Validation** | AC-1: Expects a payload `{"question": "..."}`. | BE | Send a request with a missing `question` field or invalid type, and verify the server returns a `422 Unprocessable Entity` status code. |
-| **UC-5.2: Process Cache Hit** | AC-2: Returns cached response on threshold hit, marking `"source": "semantic_cache"`. | DB, BE | Insert a seed row. Send a highly similar request. Confirm the response `source` is `"semantic_cache"` and similarity is returned. |
-| **UC-5.3: Process Cache Miss** | AC-3: Generate embedding, query Gemini, persist, and return response marking `"source": "llm"`. | DB, BE | Send a unique request. Confirm response `source` is `"llm"`. Verify that the database now contains the new interaction row. |
-| **UC-5.4: Validate Response Structure** | AC-4: Response matches the exact schema contract. | BE | Assert that the response contains all required fields: `source`, `similarity_percentage`, `current_question`, and `response`. |
+| **UC-5.1: Request Format Validation** ✅ | AC-1: Expects a payload `{"question": "..."}`. | BE | Send a request with a missing `question` field or invalid type, and verify the server returns a `422 Unprocessable Entity` status code. |
+| **UC-5.2: Process Cache Hit** ✅ | AC-2: Returns cached response on threshold hit, marking `"source": "semantic_cache"`. | DB, BE | Insert a seed row. Send a highly similar request. Confirm the response `source` is `"semantic_cache"` and similarity is returned. |
+| **UC-5.3: Process Cache Miss** ✅ | AC-3: Generate embedding, query Gemini, persist, and return response marking `"source": "llm"`. | DB, BE | Send a unique request. Confirm response `source` is `"llm"`. Verify that the database now contains the new interaction row. |
+| **UC-5.4: Validate Response Structure** ✅ | AC-4: Response matches the exact schema contract. | BE | Assert that the response contains all required fields: `source`, `similarity_percentage`, `current_question`, and `response`. |
 
 ---
 

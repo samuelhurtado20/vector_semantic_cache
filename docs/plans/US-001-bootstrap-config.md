@@ -46,9 +46,9 @@ No database changes are required for this story.
 
 | Use Case | Acceptance Criteria | Tiers Touched | Verification Method |
 |---|---|---|---|
-| **UC-1.1: System Boots Successfully** | AC-1: FastAPI app boots with a basic `/health` check endpoint. | BE | Run `uvicorn main:app --reload` and send a GET request to `/health`. Validate response `{"status": "ok"}`. |
-| **UC-1.2: Validate Config Loading** | AC-2: Environment variables are validated using `pydantic-settings`. | BE | Check that the settings object parses correctly when valid keys are provided in `.env`. |
-| **UC-1.3: Prevent Startup on Missing API Key** | AC-3: Missing `.env` variables throw a validation error on startup. | BE | Run application without setting `GEMINI_API_KEY` and verify it raises a validation error on startup and fails to run. |
+| **UC-1.1: System Boots Successfully** ✅ | AC-1: FastAPI app boots with a basic `/health` check endpoint. | BE | Run `uvicorn main:app --reload` and send a GET request to `/health`. Validate response `{"status": "ok"}`. |
+| **UC-1.2: Validate Config Loading** ✅ | AC-2: Environment variables are validated using `pydantic-settings`. | BE | Check that the settings object parses correctly when valid keys are provided in `.env`. |
+| **UC-1.3: Prevent Startup on Missing API Key** ✅ | AC-3: Missing `.env` variables throw a validation error on startup. | BE | Run application without setting `GEMINI_API_KEY` and verify it raises a validation error on startup and fails to run. |
 
 ---
 

@@ -1,6 +1,6 @@
 # Code Review: Vector Semantic Cache FastAPI Backend
 
-**Date:** 2026-08-14  
+**Date:** 2026-08-17 (updated)  
 **Scope:** Full backend review (`main.py`, `config.py`, `database.py`, `models.py`, `schemas.py`, `services/`, `tests/`, `README.md`).  
 **Guidelines:** Reviewed against the `python-backend` FastAPI skill (async-first, Pydantic validation, dependency injection, fail fast, security by default).
 
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The codebase is a functional FastAPI prototype with a clear separation between routes, services, and database layers. The semantic-cache flow is correctly implemented at a high level, and Pydantic settings are used well. Several production-readiness improvements have already been applied: global exception handlers, domain-specific error responses, Gemini API error wrapping, database rollback on persistence failures, and a sanitized `/health` endpoint. The remaining highest-impact improvements are completing the API contract (the missing `/similarity-search` endpoint), aligning the English/Spanish naming mismatch, and closing the testing/observability gaps.
+The codebase is a functional FastAPI prototype with a clear separation between routes, services, and database layers. The semantic-cache flow is correctly implemented at a high level, and Pydantic settings are used well. All high-priority review items have been resolved: global exception handlers, domain-specific error responses, Gemini API error wrapping, database rollback on persistence failures, a sanitized `/health` endpoint, CORS middleware, rate limiting via `slowapi`, and a full suite of 14 FastAPI endpoint integration tests. The remaining improvements are observability, database scalability, and minor configuration refinements.
 
 ---
 
@@ -93,24 +93,25 @@ The codebase is a functional FastAPI prototype with a clear separation between r
 
 **Recommendation (Medium):** Add an index on `created_at` (history ordering) and introduce Alembic before the schema grows.
 
-### Finding 5.3 — History endpoint loads embeddings
-- [database.py](database.py#L51-L52) returns full `InteractionCache` rows; `InteractionHistory` excludes the embedding at the schema level, but SQLAlchemy still fetches it.
-
-**Recommendation (Low):** Use `load_only` or a dedicated query to avoid pulling embeddings into memory for the history endpoint.
+### Finding 5.3 — History endpoint loads embeddings ✅ Fixed
+- `get_all_interactions` in [database.py](database.py) chains `.options(load_only(...))`, selecting only `id`, `question`, `response`, and `created_at`; the `embedding` column is never fetched for the history endpoint.
+- A separate `get_all_records` function (no `load_only`) is used by [services/cache_engine.py](services/cache_engine.py) for similarity search so embeddings are loaded in a single query without lazy-load round-trips.
 
 ---
 
 ## 6. Security
 
-### Finding 6.1 — No CORS configuration
-- The app accepts cross-origin requests by default.
+### Finding 6.1 — No CORS configuration ✅ Fixed
+- [main.py](main.py) now mounts `CORSMiddleware` with origins controlled by `settings.cors_origins`.
+- [config.py](config.py) exposes `cors_origins: list[str] = ["*"]` (override in `.env` for production).
+- Preflight and regular cross-origin responses verified in `TestCORSHeaders` integration tests.
 
-**Recommendation (Medium):** Add `CORSMiddleware` locked to known origins.
-
-### Finding 6.2 — No rate limiting
-- `/chat` triggers an external API call and embedding generation on every miss; it is vulnerable to abuse.
-
-**Recommendation (Medium):** Add rate limiting (e.g., `slowapi` or Upstash Redis) on `/chat` and `/similarity-search`.
+### Finding 6.2 — No rate limiting ✅ Fixed
+- `slowapi` added to [requirements.txt](requirements.txt) and installed.
+- [main.py](main.py) registers a `Limiter` on `app.state.limiter` with a `RateLimitExceeded` exception handler.
+- `@limiter.limit(settings.rate_limit)` applied to `/chat`, `/questions`, and `/similarity-search`; `/health` is exempt.
+- [config.py](config.py) exposes `rate_limit: str = "60/minute"` (override in `.env`).
+- 429 path verified in `TestRateLimiting` integration tests.
 
 ### Finding 6.3 — API key validation only at import
 - [config.py](config.py) makes `gemini_api_key` required, but there is no runtime check or graceful degradation.
@@ -140,18 +141,11 @@ The codebase is a functional FastAPI prototype with a clear separation between r
 - Removed all `if __name__ == "__main__": unittest.main()` blocks.
 - All tests now use `pytest` fixtures and assertions.
 
-### Finding 8.2 — No FastAPI endpoint tests
-- There are no tests for `/chat`, `/questions`, or `/similarity-search`.
-
-**Recommendation (High):** Add `httpx`/`AsyncClient` tests:
-
-```python
-@pytest.fixture
-async def client():
-    from httpx import AsyncClient, ASGITransport
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        yield c
-```
+### Finding 8.2 — No FastAPI endpoint tests ✅ Fixed
+- [tests/test_main.py](tests/test_main.py) added with 14 integration tests using `TestClient` and isolated SQLite databases.
+- All Gemini SDK calls are monkeypatched; no live API or network access required.
+- Coverage: `GET /health`, `POST /chat` (cache hit, miss, 422), `GET /questions` (empty, ordering, embedding exclusion), `POST /similarity-search` (empty cache, no LLM call, partial similarity), CORS headers (regular + preflight), rate limiter registration, and 429 response path.
+- `reset_limiter_storage` autouse fixture clears in-memory rate limit counters between tests to prevent interference.
 
 ### Finding 8.3 — Live API dependency in tests ✅ Fixed
 - [tests/test_gemini_service.py](tests/test_gemini_service.py) now mocks the Gemini SDK by default.
@@ -165,10 +159,12 @@ async def client():
 
 ## 9. Observability
 
-### Finding 9.1 — No logging
-- There is no structured logging for requests, cache hits/misses, or errors.
-
-**Recommendation (Medium):** Add a logger and emit `info`/`warning` logs for cache hits, misses, and API latency; emit `error` logs for exceptions.
+### Finding 9.1 — No logging ✅ Fixed
+- Python's standard `logging` module configured in [main.py](main.py) with `INFO` level and a timestamped format (`%(asctime)s [%(levelname)-8s] %(name)s — %(message)s`).
+- `main.py` emits `cache_hit` / `cache_miss` events with similarity score and total request elapsed time (ms).
+- `main.py` logs `startup` with the configured threshold and database URL.
+- [services/gemini.py](services/gemini.py) logs `embedding_generated` and `response_generated` with per-call elapsed time; errors are logged before re-raising.
+- [exceptions.py](exceptions.py) logs `WARNING` for domain/validation errors (`application_error`, `validation_error`) and `ERROR` with full stack trace for unexpected exceptions.
 
 ### Finding 9.2 — No metrics or tracing
 - No request timing, cache hit-rate, or LLM token usage metrics.
@@ -196,20 +192,20 @@ async def client():
 4. ✅ Remove sensitive fields from `/health`.
 5. ✅ Align API language (English) across specs, code, and docs.
 6. ✅ Fix `services/gemini.py` docstring/model mismatch.
-7. Add FastAPI endpoint integration tests.
+7. ✅ Add FastAPI endpoint integration tests (14 tests in `tests/test_main.py`).
+8. ✅ Add CORS middleware (`CORSMiddleware`, configurable via `cors_origins` setting).
+9. ✅ Add rate limiting (`slowapi`, `60/minute` default, configurable via `rate_limit` setting).
 
-### Medium Priority
-8. ✅ Replace deprecated `@app.on_event("startup")` with `lifespan`.
-9. Store embeddings as `BLOB` instead of JSON text.
-10. ✅ Standardize all tests on `pytest` and mock Gemini by default.
-11. Add CORS and rate limiting.
-12. Add structured logging and cache hit/miss metrics.
+### Medium Priority (open)
+10. Document linear scan scalability limit; evaluate vector index for production (Finding 2.1).
+11. Store embeddings as `BLOB` instead of JSON `TEXT` (Finding 5.1).
+12. Add `created_at` index and introduce Alembic migrations (Finding 5.2).
+13. ✅ Add structured logging for cache hits/misses, API latency, and errors (Finding 9.1).
 
-### Low Priority
-13. Introduce Alembic migrations.
-14. Split settings into domain-specific configs.
-15. Add `load_only` optimization for `/questions`.
-16. Add max-length validation and input sanitization on `question`.
+### Low Priority (open)
+14. ✅ Use `load_only` for the history endpoint to avoid fetching embeddings into memory (Finding 5.3).
+15. Offload DB writes to thread pool or switch to `create_async_engine` (Finding 4.1).
+16. Add metrics/tracing (`logfire`, `prometheus-client`, or OpenTelemetry) (Finding 9.2).
 
 ---
 

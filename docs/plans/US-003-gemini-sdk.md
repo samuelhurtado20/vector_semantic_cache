@@ -43,8 +43,8 @@ No database changes are required for this story.
 
 | Use Case | Acceptance Criteria | Tiers Touched | Verification Method |
 |---|---|---|---|
-| **UC-3.1: Generate Embeddings via SDK** | AC-1: Initialize Gemini client using API key. AC-2: Service returns 768-dimensional float list using `text-embedding-004`. | BE | Call `get_embedding("What is FastAPI?")` in a test script. Assert the returned value is a list of floats, and `len(result) == 768`. |
-| **UC-3.2: Generate Text Response via SDK** | AC-3: Service returns a string response from Gemini chat model. | BE | Call `generate_response("Translate hello to Spanish")` in a test script. Assert that the response is a string containing the text "hola" (case-insensitive). |
+| **UC-3.1: Generate Embeddings via SDK** ✅ | AC-1: Initialize Gemini client using API key. AC-2: Service returns 3072-dimensional float list using `gemini-embedding-001`. | BE | Call `get_embedding("What is FastAPI?")` in a test script. Assert the returned value is a list of floats, and `len(result) == 3072`. |
+| **UC-3.2: Generate Text Response via SDK** ✅ | AC-3: Service returns a string response from Gemini chat model. | BE | Call `generate_response("Translate hello to Spanish")` in a test script. Assert that the response is a string containing the text "hola" (case-insensitive). |
 
 ---
 

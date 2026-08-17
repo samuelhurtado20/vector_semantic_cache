@@ -51,8 +51,8 @@ Create the table `interaction_cache` in SQLite:
 
 | Use Case | Acceptance Criteria | Tiers Touched | Verification Method |
 |---|---|---|---|
-| **UC-2.1: Initialize Tables** | AC-1: A SQLite database is initialized using a URL specified in `DATABASE_URL`. AC-2: Table `interaction_cache` is created. | DB, BE | Boot the application and verify that the file `chat_cache.db` is created in the root directory. Connect via `sqlite3` CLI and run `.schema interaction_cache` to confirm column types. |
-| **UC-2.2: Add and Fetch Interaction** | AC-3: Database helper functions are created to save/retrieve records. | BE | Run a Python unit test script that opens a DB session, inserts a mock record containing an embedding list, retrieves it, and asserts similarity values. |
+| **UC-2.1: Initialize Tables** ✅ | AC-1: A SQLite database is initialized using a URL specified in `DATABASE_URL`. AC-2: Table `interaction_cache` is created. | DB, BE | Boot the application and verify that the file `chat_cache.db` is created in the root directory. Connect via `sqlite3` CLI and run `.schema interaction_cache` to confirm column types. |
+| **UC-2.2: Add and Fetch Interaction** ✅ | AC-3: Database helper functions are created to save/retrieve records. | BE | Run a Python unit test script that opens a DB session, inserts a mock record containing an embedding list, retrieves it, and asserts similarity values. |
 
 ---
 
