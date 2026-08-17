@@ -87,7 +87,7 @@ class TestSearchCache:
 
     def test_empty_db_returns_miss_with_zero_similarity(self, monkeypatch):
         monkeypatch.setattr(
-            "services.cache_engine.get_all_interactions", lambda _: []
+            "services.cache_engine.get_all_records", lambda _: []
         )
         session = MagicMock()
         is_hit, record, similarity = search_cache([0.1, 0.2], session)
@@ -101,7 +101,7 @@ class TestSearchCache:
         stored = _make_record("How does Python work?", "Python is a language.", vec)
 
         monkeypatch.setattr(
-            "services.cache_engine.get_all_interactions", lambda _: [stored]
+            "services.cache_engine.get_all_records", lambda _: [stored]
         )
         monkeypatch.setattr(
             "services.cache_engine.settings",
@@ -121,7 +121,7 @@ class TestSearchCache:
         stored = _make_record("How does Python work?", "Python is a language.", vec_stored)
 
         monkeypatch.setattr(
-            "services.cache_engine.get_all_interactions", lambda _: [stored]
+            "services.cache_engine.get_all_records", lambda _: [stored]
         )
         monkeypatch.setattr(
             "services.cache_engine.settings",
@@ -143,7 +143,7 @@ class TestSearchCache:
         far_record = _make_record("Far question", "Far answer.", far_vec)
 
         monkeypatch.setattr(
-            "services.cache_engine.get_all_interactions",
+            "services.cache_engine.get_all_records",
             lambda _: [far_record, close_record],
         )
         monkeypatch.setattr(
@@ -161,7 +161,7 @@ class TestSearchCache:
 class TestFindClosestMatch:
     def test_empty_db_returns_none_and_zero_similarity(self, monkeypatch):
         monkeypatch.setattr(
-            "services.cache_engine.get_all_interactions", lambda _: []
+            "services.cache_engine.get_all_records", lambda _: []
         )
         record, similarity = find_closest_match([0.1, 0.2], MagicMock())
 
@@ -174,7 +174,7 @@ class TestFindClosestMatch:
         stored = _make_record("How does Python work?", "Python is a language.", vec_stored)
 
         monkeypatch.setattr(
-            "services.cache_engine.get_all_interactions", lambda _: [stored]
+            "services.cache_engine.get_all_records", lambda _: [stored]
         )
 
         matched_record, similarity = find_closest_match(vec_query, MagicMock())
@@ -191,7 +191,7 @@ class TestFindClosestMatch:
         far_record = _make_record("Far question", "Far answer.", far_vec)
 
         monkeypatch.setattr(
-            "services.cache_engine.get_all_interactions",
+            "services.cache_engine.get_all_records",
             lambda _: [far_record, close_record],
         )
 

@@ -13,7 +13,7 @@ import numpy as np
 from sqlalchemy.orm import Session
 
 from config import settings
-from database import get_all_interactions, load_embedding
+from database import get_all_records, load_embedding
 from models import InteractionCache
 
 
@@ -99,7 +99,7 @@ def search_cache(
         - ``best_similarity`` (float): The highest similarity score found (0.0 if DB
           is empty).
     """
-    records = get_all_interactions(db_session)
+    records = get_all_records(db_session)
     best_record, best_similarity = _find_best_match(question_embedding, records)
     is_hit = best_similarity >= settings.similarity_threshold
     return is_hit, (best_record if is_hit else None), best_similarity
@@ -123,5 +123,5 @@ def find_closest_match(
         A 2-tuple of the closest matching record (or None if the DB is empty)
         and the highest similarity score found (0.0 if the DB is empty).
     """
-    records = get_all_interactions(db_session)
+    records = get_all_records(db_session)
     return _find_best_match(question_embedding, records)
