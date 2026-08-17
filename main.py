@@ -1,7 +1,11 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Body, Depends, FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from config import settings
@@ -36,6 +40,17 @@ app = FastAPI(
 
 register_exception_handlers(app)
 
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check() -> HealthResponse:
@@ -48,7 +63,8 @@ async def health_check() -> HealthResponse:
 
 
 @app.post("/chat", response_model=ChatResponse, tags=["Chat"], summary="Process a chat question")
-async def chat(request: ChatRequest, db_session: Session = Depends(get_db)) -> ChatResponse:
+@limiter.limit(settings.rate_limit)
+async def chat(request: Request, body: ChatRequest = Body(...), db_session: Session = Depends(get_db)) -> ChatResponse:
     """
     Process a user question using the semantic cache.
 
@@ -57,7 +73,7 @@ async def chat(request: ChatRequest, db_session: Session = Depends(get_db)) -> C
     - On cache hit (similarity >= threshold), returns the cached answer.
     - On cache miss, queries Gemini, persists the new interaction, and returns the LLM answer.
     """
-    question = request.question
+    question = body.question
 
     question_embedding = await asyncio.to_thread(get_embedding, question)
     is_hit, matched_record, best_similarity = await asyncio.to_thread(
@@ -95,7 +111,8 @@ async def chat(request: ChatRequest, db_session: Session = Depends(get_db)) -> C
     tags=["History"],
     summary="Retrieve interaction history",
 )
-async def get_questions(db_session: Session = Depends(get_db)) -> list[InteractionCache]:
+@limiter.limit(settings.rate_limit)
+async def get_questions(request: Request, db_session: Session = Depends(get_db)) -> list[InteractionCache]:
     """
     Retrieve all stored interactions from the semantic cache.
 
@@ -111,8 +128,10 @@ async def get_questions(db_session: Session = Depends(get_db)) -> list[Interacti
     tags=["Search"],
     summary="Manual semantic similarity search",
 )
+@limiter.limit(settings.rate_limit)
 async def similarity_search(
-    request: SimilaritySearchRequest,
+    request: Request,
+    body: SimilaritySearchRequest = Body(...),
     db_session: Session = Depends(get_db),
 ) -> SimilaritySearchResponse:
     """
@@ -122,7 +141,7 @@ async def similarity_search(
     compares it against all stored embeddings, and returns the closest match along
     with the similarity score. It does not call the LLM or persist anything.
     """
-    question = request.question
+    question = body.question
     question_embedding = await asyncio.to_thread(get_embedding, question)
     matched_record, best_similarity = await asyncio.to_thread(
         find_closest_match, question_embedding, db_session

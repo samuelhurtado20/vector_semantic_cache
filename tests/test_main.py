@@ -18,6 +18,7 @@ from pytest import MonkeyPatch
 
 import main
 from database import get_db, get_session_factory, init_db
+from slowapi.errors import RateLimitExceeded
 
 
 EMBEDDING_DIM = 3072
@@ -28,6 +29,12 @@ def _make_embedding(seed: float) -> list[float]:
     vector = [0.0] * EMBEDDING_DIM
     vector[0] = seed
     return vector
+
+
+@pytest.fixture(autouse=True)
+def reset_limiter_storage() -> None:
+    """Reset in-memory rate limit counters before each test to prevent interference."""
+    main.limiter._storage.reset()
 
 
 @pytest.fixture
@@ -186,3 +193,57 @@ class TestSimilaritySearchEndpoint:
         assert body["saved_question"] == "Stored question?"
         assert body["saved_response"] == "Stored answer."
         assert 0.0 < body["similarity_percentage"] < 1.0
+
+
+class TestCORSHeaders:
+    def test_cors_header_present_on_regular_request(self, client: TestClient) -> None:
+        response = client.get("/health", headers={"Origin": "http://example.com"})
+
+        assert response.status_code == 200
+        assert "access-control-allow-origin" in response.headers
+
+    def test_preflight_returns_cors_headers(self, client: TestClient) -> None:
+        response = client.options(
+            "/chat",
+            headers={
+                "Origin": "http://example.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+        )
+
+        assert response.status_code == 200
+        assert "access-control-allow-origin" in response.headers
+        assert "access-control-allow-methods" in response.headers
+
+
+class TestRateLimiting:
+    def test_rate_limiter_is_registered_on_app(self, client: TestClient) -> None:
+        from slowapi import Limiter
+
+        assert isinstance(main.app.state.limiter, Limiter)
+
+    def test_rate_limit_exceeded_returns_429(self, client: TestClient, monkeypatch: MonkeyPatch) -> None:
+        """Verify 429 is returned when the rate limit is exceeded on /chat."""
+        from slowapi.errors import RateLimitExceeded as RLE
+
+        call_count = [0]
+        chat_limit = main.limiter._route_limits["main.chat"][0]
+
+        def _count_and_maybe_raise(request, endpoint_func, in_middleware=False):
+            call_count[0] += 1
+            # Always set view_rate_limit so the async_wrapper's _inject_headers call has it
+            request.state.view_rate_limit = None
+            if call_count[0] > 1:
+                raise RLE(chat_limit)
+
+        monkeypatch.setattr(main.limiter, "_check_request_limit", _count_and_maybe_raise)
+        monkeypatch.setattr(main, "get_embedding", lambda text: _make_embedding(1.0))
+        monkeypatch.setattr(main, "generate_response", lambda prompt: "answer")
+
+        r1 = client.post("/chat", json={"question": "first question?"})
+        assert r1.status_code == 200
+
+        r2 = client.post("/chat", json={"question": "second question?"})
+        assert r2.status_code == 429
+        assert "error" in r2.json()

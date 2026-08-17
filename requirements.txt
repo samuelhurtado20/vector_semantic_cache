@@ -4,4 +4,5 @@ pydantic-settings
 google-genai
 numpy
 sqlalchemy
+slowapi
 pytest

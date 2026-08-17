@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     similarity_threshold: float = 0.90
     database_url: str = "sqlite:///./chat_cache.db"
     gemini_model: str = "gemini-flash-latest"
+    cors_origins: list[str] = ["*"]
+    rate_limit: str = "60/minute"
 
     model_config = SettingsConfigDict(
         env_file=".env",
